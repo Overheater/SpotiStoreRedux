@@ -95,7 +95,7 @@ namespace SpotiStore.ViewModels
             {
                 playlist.AddPlaylistTrack(item);
             }
-            var fileLocation = await GetPath();
+            var fileLocation = await GetPath(spotifyPlaylist.Name);
             if (fileLocation == "") return false;
             using (var writer = new StreamWriter(fileLocation))
             using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
@@ -110,7 +110,7 @@ namespace SpotiStore.ViewModels
         /// prompts the user to choose a save location for the CSV backup
         /// </summary>
         /// <returns></returns>
-        public async Task<string> GetPath()
+        public async Task<string> GetPath(string name)
         {
 
             if (Avalonia.Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -118,8 +118,10 @@ namespace SpotiStore.ViewModels
                 SaveFileDialog saveFileDialog = new SaveFileDialog
                 {
                     Title = "Choose file name",
+                    
                     // TODO: add the playlist name as a default name 
                 };
+                saveFileDialog.InitialFileName = Path.GetInvalidFileNameChars().Aggregate(name, (current, c) => current.Replace(c, '_'));
                 saveFileDialog.Filters.Add(new FileDialogFilter { Name = "spreadsheets", Extensions = { "csv" } });
                 var outPathStrings = await saveFileDialog.ShowAsync(desktop.MainWindow).ConfigureAwait(false);
 
