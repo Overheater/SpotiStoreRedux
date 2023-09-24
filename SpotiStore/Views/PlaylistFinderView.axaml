@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="600"
+             xmlns:vm="using:SpotiStore.ViewModels"
+             x:DataType="vm:PlaylistFinderViewModel"
+             x:Class="SpotiStore.Views.PlaylistFinderView">
+  <DockPanel >
+    <Button  DockPanel.Dock="Bottom" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">Archive Playlist</Button>
+    <StackPanel>
+      <Panel>
+        <TextBox Margin="4" Text="{Binding PlaylistId}" Watermark="Spotify Playlist ID"/>
+        <Button Margin="4"  HorizontalAlignment="Right" Command="{Binding SearchCommand}">Search</Button>
+      </Panel>
+      <Panel>
+        <TextBlock Margin="4"  Width="225" FontWeight="Bold"  HorizontalAlignment="Left"> </TextBlock>
+      </Panel>
+    </StackPanel>
+  </DockPanel>
+</UserControl>
