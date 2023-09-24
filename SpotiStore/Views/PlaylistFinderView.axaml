@@ -2,17 +2,31 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="600"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="600" Height="600" Width="400"
              xmlns:vm="using:SpotiStore.ViewModels"
              x:DataType="vm:PlaylistFinderViewModel"
              x:Class="SpotiStore.Views.PlaylistFinderView">
   <DockPanel >
-    <Button  DockPanel.Dock="Bottom" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">Archive Playlist</Button>
+    <Button  DockPanel.Dock="Bottom" Command="{Binding ArchivePlaylist}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">Archive Playlist</Button>
     <StackPanel>
       <Panel>
         <TextBox Margin="4" Text="{Binding PlaylistId}" Watermark="Spotify Playlist ID"/>
         <Button Margin="4"  HorizontalAlignment="Right" Command="{Binding SearchCommand}">Search</Button>
       </Panel>
+      <Panel>
+        <TextBlock HorizontalAlignment="Left" Text="{Binding PlaylistName}"/>
+      </Panel>
+      <Border Background="LightGray" CornerRadius="4" Padding="4">
+      <ScrollViewer Width="400" Height="500">
+        <ItemsControl ItemsSource="{Binding PlaylistTracks}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+                <TextBlock HorizontalAlignment="Left" Text="{Binding }"/>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+      </Border>
       <Panel>
         <TextBlock Margin="4"  Width="225" FontWeight="Bold"  HorizontalAlignment="Left"> </TextBlock>
       </Panel>
