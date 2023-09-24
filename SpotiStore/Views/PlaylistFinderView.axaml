@@ -14,19 +14,21 @@
         <Button Margin="4"  HorizontalAlignment="Right" Command="{Binding SearchCommand}">Search</Button>
       </Panel>
       <Panel>
-        <TextBlock HorizontalAlignment="Left" Text="{Binding PlaylistName}"/>
+        <TextBlock HorizontalAlignment="Center"  FontWeight="Bold" Text="{Binding PlaylistName}"/>
       </Panel>
-      <Border Background="LightGray" CornerRadius="4" Padding="4">
-      <ScrollViewer Width="400" Height="500">
-        <ItemsControl ItemsSource="{Binding PlaylistTracks}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-                <TextBlock HorizontalAlignment="Left" Text="{Binding }"/>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </ScrollViewer>
-      </Border>
+      <Panel Width="380">
+        <Border Background="LightGray" CornerRadius="4" Padding="4">
+          <ScrollViewer Width="380" Height="500">
+            <ItemsControl ItemsSource="{Binding PlaylistTracks}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock HorizontalAlignment="Left" Text="{Binding }"/>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Border>
+      </Panel>
       <Panel>
         <TextBlock Margin="4"  Width="225" FontWeight="Bold"  HorizontalAlignment="Left"> </TextBlock>
       </Panel>
