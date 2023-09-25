@@ -1,9 +1,6 @@
 ﻿
 using SpotifyAPI.Web;
 using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SpotiStore.Services
@@ -36,6 +33,7 @@ namespace SpotiStore.Services
             }
 
         }
+
         public async Task<string> QueryPlaylist(string playlistId)
         {
             SpotifyAPI.Web.FullPlaylist playlist;

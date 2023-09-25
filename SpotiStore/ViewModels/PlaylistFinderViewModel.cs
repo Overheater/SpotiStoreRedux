@@ -127,7 +127,39 @@ namespace SpotiStore.ViewModels
                 return null;
             }
         }
+        public async Task<bool> ArchivePlaylists()
+        {
+            foreach(var selectedPlaylist in SelectedPlaylists)
+            {
+                FullPlaylist fullPlaylist;
+                Playlist playlist;
+                try
+                {
+                    fullPlaylist = await _client.Playlists.Get(selectedPlaylist.Item1);
+                    playlist = new Playlist(fullPlaylist);
+                }
+                catch (Exception)
+                {
 
+                    AccountName = $"{selectedPlaylist.Item2} was not found!";
+                    return false;
+                }
+
+                await foreach (var item in _client.Paginate(fullPlaylist.Tracks))
+                {
+                    playlist.AddPlaylistTrack(item);
+                }
+                var fileLocation = await GetPath(fullPlaylist.Name);
+                if (fileLocation == "") return false;
+                using (var writer = new StreamWriter(fileLocation))
+                using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                {
+                    csv.Context.RegisterClassMap<SongMap>();
+                    csv.WriteRecords(playlist.PlaylistSongs.Select(p => (Song)p));
+                }
+            }
+            return true;
+        }
 
         /// <summary>
         /// pulls the playlist data, creates a playlist model object, and converts the tracks to Song model objects
@@ -135,12 +167,12 @@ namespace SpotiStore.ViewModels
         /// <returns></returns>
         public async Task<bool> ArchivePlaylist()
         {
-            FullPlaylist spotifyPlaylist;
+            FullPlaylist fullPlaylist;
             Playlist playlist;
             try
             {
-                 spotifyPlaylist = await _client.Playlists.Get(PlaylistId);
-                 playlist = new Playlist(spotifyPlaylist);
+                fullPlaylist = await _client.Playlists.Get(PlaylistId);
+                 playlist = new Playlist(fullPlaylist);
             }
             catch (Exception e)
             {
@@ -153,11 +185,11 @@ namespace SpotiStore.ViewModels
                 return false;
             }
 
-            await foreach (var item in _client.Paginate(spotifyPlaylist.Tracks))
+            await foreach (var item in _client.Paginate(fullPlaylist.Tracks))
             {
                 playlist.AddPlaylistTrack(item);
             }
-            var fileLocation = await GetPath(spotifyPlaylist.Name);
+            var fileLocation = await GetPath(fullPlaylist.Name);
             if (fileLocation == "") return false;
             using (var writer = new StreamWriter(fileLocation))
             using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))

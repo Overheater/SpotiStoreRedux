@@ -59,7 +59,7 @@
             <Panel>
               <TextBlock Margin="4"  Width="225" FontWeight="Bold"  HorizontalAlignment="Left"> </TextBlock>
             </Panel>
-            <Button  DockPanel.Dock="Bottom" Command="{Binding ArchivePlaylist}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">Archive Playlists</Button>
+            <Button  DockPanel.Dock="Bottom" Command="{Binding ArchivePlaylists}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">Archive Playlists</Button>
           </StackPanel>
         </Panel>
       </TabItem>
