@@ -15,6 +15,7 @@ using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using static SpotifyAPI.Web.PlaylistRemoveItemsRequest;
 
 namespace SpotiStore.ViewModels
 {
@@ -24,26 +25,41 @@ namespace SpotiStore.ViewModels
         /// the inputted ID for a spotify playlist query
         /// </summary>
         private string _playlistId  = string.Empty;
+
         private string _playlistName;
+
+        private string _accountId = string.Empty;
+        
+        private string _accountName;
+
         private SpotifyClient _client;
-        /// <summary>
-        /// the name of the retrieved playlist
-        /// </summary>
+
         public string? RetrievedPlaylistName;
         /// <summary>
         /// the reactive Command handling the playlist search button handling
         /// </summary>
         public ReactiveCommand<Unit,System.Threading.Tasks.Task<string>> SearchCommand { get;}
+        public ReactiveCommand<Unit, System.Threading.Tasks.Task<string>> SearchAccountCommand { get; }
+
         public ObservableCollection<string> PlaylistTracks { get; }
+        public ObservableCollection<Tuple<string,string>> AccountPlaylists { get; }
+        public ObservableCollection<Tuple<string, string>> SelectedPlaylists { get; } = new ObservableCollection<Tuple<string,string>>();
 
         public PlaylistFinderViewModel(SpotifyClient client)
         {
             PlaylistTracks = new ObservableCollection<string>();
-            var isValidSearchQuery = this.WhenAnyValue(
+            AccountPlaylists = new ObservableCollection<Tuple<string,string>>();
+            var isValidPlaylistSearchQuery = this.WhenAnyValue(
                     q => q.PlaylistId,
                     q => !string.IsNullOrWhiteSpace(q));
+            var isValidAccountSearchQuery = this.WhenAnyValue(
+                    q => q.AccountId,
+                    q => !string.IsNullOrEmpty(q));
+
             SearchCommand = ReactiveCommand.Create(
-                    () => QueryPlaylist(), isValidSearchQuery);
+                    () => QueryPlaylist(), isValidPlaylistSearchQuery);
+            SearchAccountCommand = ReactiveCommand.Create(
+                () => QueryAccount(), isValidAccountSearchQuery);
             _client = client;
         }
         /// <summary>
@@ -77,20 +93,66 @@ namespace SpotiStore.ViewModels
 
         }
 
+        public async Task<string> QueryAccount()
+        {
+            SpotifyAPI.Web.PublicUser user;
+            //pull user name
+            try
+            {
+                var test = await _client.UserProfile.Get(AccountId);
+                AccountName = test.DisplayName;
+            }
+            catch (Exception e)
+            {
+
+                AccountName = "No User Account was found!";
+                return "No User Account was found!";
+            }
+            //pull the Id and Name of every playlist associated with the queried account
+            try
+            {
+                var playlistInformation = new List<Tuple<string, string>>();
+                var playlists = await _client.Playlists.GetUsers(AccountId);
+                await foreach (var playlist in _client.Paginate(playlists))
+                {
+                    playlistInformation.Add(new Tuple<string, string>(playlist.Id, playlist.Name));
+                }
+
+                UpdateAccountPlaylists(playlistInformation);
+                return null;
+
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+
         /// <summary>
         /// pulls the playlist data, creates a playlist model object, and converts the tracks to Song model objects
         /// </summary>
         /// <returns></returns>
         public async Task<bool> ArchivePlaylist()
         {
-            if (PlaylistId == null)
+            FullPlaylist spotifyPlaylist;
+            Playlist playlist;
+            try
             {
+                 spotifyPlaylist = await _client.Playlists.Get(PlaylistId);
+                 playlist = new Playlist(spotifyPlaylist);
+            }
+            catch (Exception e)
+            {
+
+                UpdatePlaylistPreviewTracks(null);
+
+                PlaylistName = "The targeted playlist was not found!";
                 //TODO: Add error handling here for when a user hasn't queried a playlist yet.
 
                 return false;
             }
-            var spotifyPlaylist = await _client.Playlists.Get(PlaylistId);
-            var playlist = new Playlist(spotifyPlaylist);
+
             await foreach (var item in _client.Paginate(spotifyPlaylist.Tracks))
             {
                 playlist.AddPlaylistTrack(item);
@@ -133,6 +195,20 @@ namespace SpotiStore.ViewModels
         }
 
 
+        public void UpdateAccountPlaylists(IEnumerable<Tuple<string,string>> playlists)
+        {
+
+            AccountPlaylists.Clear();
+            if (playlists != null)
+            {
+                foreach (var playlist in playlists)
+                {
+                    AccountPlaylists.Add(playlist);
+                }
+            }
+        }
+
+
         public void UpdatePlaylistPreviewTracks(IEnumerable<Song>? songs)
         {
             
@@ -145,7 +221,17 @@ namespace SpotiStore.ViewModels
                 }
             }
         }
+        public string AccountName
+        {
+            get => _accountName;
+            set => this.RaiseAndSetIfChanged(ref _accountName, value);
+        }
 
+        public string AccountId
+        {
+            get => _accountId;
+            set => this.RaiseAndSetIfChanged(ref _accountId, value);
+        }
 
         public string PlaylistId {
             get => _playlistId;

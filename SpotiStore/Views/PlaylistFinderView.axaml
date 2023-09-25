@@ -2,36 +2,69 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="600" Height="600" Width="400"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="700" Height="675" Width="400"
              xmlns:vm="using:SpotiStore.ViewModels"
              x:DataType="vm:PlaylistFinderViewModel"
              x:Class="SpotiStore.Views.PlaylistFinderView">
   <DockPanel >
-    <Button  DockPanel.Dock="Bottom" Command="{Binding ArchivePlaylist}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">Archive Playlist</Button>
-    <StackPanel>
-      <Panel>
-        <TextBox Margin="4" Text="{Binding PlaylistId}" Watermark="Spotify Playlist ID"/>
-        <Button Margin="4"  HorizontalAlignment="Right" Command="{Binding SearchCommand}">Search</Button>
-      </Panel>
-      <Panel>
-        <TextBlock HorizontalAlignment="Center"  FontWeight="Bold" Text="{Binding PlaylistName}"/>
-      </Panel>
-      <Panel Width="380">
-        <Border Background="LightGray" CornerRadius="4" Padding="4">
-          <ScrollViewer Width="380" Height="500">
-            <ItemsControl ItemsSource="{Binding PlaylistTracks}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock HorizontalAlignment="Left" Text="{Binding }"/>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </ScrollViewer>
-        </Border>
-      </Panel>
-      <Panel>
-        <TextBlock Margin="4"  Width="225" FontWeight="Bold"  HorizontalAlignment="Left"> </TextBlock>
-      </Panel>
-    </StackPanel>
+    <TabControl>
+      <TabItem Header="Playlist Search" VerticalAlignment="Center">
+        <Panel>
+          <StackPanel>
+            <Panel>
+              <TextBox Margin="4" Text="{Binding PlaylistId}" Watermark="Spotify Playlist ID"/>
+              <Button Margin="4"  HorizontalAlignment="Right" Command="{Binding SearchCommand}">Search</Button>
+            </Panel>
+            <Panel>
+              <TextBlock HorizontalAlignment="Center"  FontWeight="Bold" Text="{Binding PlaylistName}"/>
+            </Panel>
+            <Panel Width="380">
+              <Border Background="LightGray" CornerRadius="4" Padding="4">
+                <ScrollViewer Width="380" Height="500">
+                  <ItemsControl ItemsSource="{Binding PlaylistTracks}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock HorizontalAlignment="Left" Text="{Binding }"/>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Border>
+            </Panel>
+            <Panel>
+              <TextBlock Margin="4"  Width="225" FontWeight="Bold"  HorizontalAlignment="Left"> </TextBlock>
+            </Panel>
+            <Button  DockPanel.Dock="Bottom" Command="{Binding ArchivePlaylist}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">Archive Playlist</Button>
+          </StackPanel>
+        </Panel>
+      </TabItem>
+      
+      <TabItem Header="User Search" VerticalAlignment="Center">
+        <Panel>
+          <StackPanel>
+            <Panel>
+              <TextBox Margin="4" Text="{Binding AccountId}" Watermark="Spotify Account ID"/>
+              <Button Margin="4"  HorizontalAlignment="Right" Command="{Binding SearchAccountCommand}">Search</Button>
+            </Panel>
+            <Panel>
+              <TextBlock HorizontalAlignment="Center"  FontWeight="Bold" Text="{Binding AccountName}"/>
+            </Panel>
+              <ListBox Background="LightGray" SelectedItems="{Binding SelectedPlaylists}" CornerRadius="4" Padding="4"  ItemsSource="{Binding AccountPlaylists}" SelectionMode="Multiple" Width="380" Height="508" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                      <TextBlock FontSize="12" Text="{Binding Item2 }" TextWrapping="Wrap"/>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            <Panel>
+              <TextBlock Margin="4"  Width="225" FontWeight="Bold"  HorizontalAlignment="Left"> </TextBlock>
+            </Panel>
+            <Button  DockPanel.Dock="Bottom" Command="{Binding ArchivePlaylist}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">Archive Playlists</Button>
+          </StackPanel>
+        </Panel>
+      </TabItem>
+      
+    </TabControl>
+
   </DockPanel>
 </UserControl>

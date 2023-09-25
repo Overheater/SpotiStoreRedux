@@ -10,11 +10,15 @@ namespace SpotiStore.Models
     {
 
         public List<Song> PlaylistSongs { get; set; }
+        public string PlaylistName { get; set; }
+        public string PlaylistId { get; set; }
         public string CreatorID { get; set; }
 
         public Playlist(FullPlaylist playlist)
         {
             CreatorID = playlist.Owner.Id;
+            PlaylistName = playlist.Name;
+            PlaylistId = playlist.Id;
             PlaylistSongs = new List<Song>();
 
         }
