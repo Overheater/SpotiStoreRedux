@@ -7,13 +7,13 @@ namespace SpotiStore.ViewModels
 {
     public class ViewModelBase : ReactiveObject
     {   
-        public SpotifyClient APIClient;
-        public bool createSpotifyClient()
+        public API APIClient;
+        public bool CreateApiSession()
         {
             try
             {
-                var clientTask = API.CreateClient();
-                APIClient = clientTask.GetAwaiter().GetResult();
+                APIClient = new API();
+                APIClient.CreateClient().GetAwaiter().GetResult();
                 return true;
             }
             catch (Exception e)

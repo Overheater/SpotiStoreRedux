@@ -1,11 +1,9 @@
-﻿using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using CsvHelper;
-using DynamicData;
 using ReactiveUI;
 using SpotifyAPI.Web;
 using SpotiStore.Models;
+using SpotiStore.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,45 +11,67 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reactive;
-using System.Text;
 using System.Threading.Tasks;
-using static SpotifyAPI.Web.PlaylistRemoveItemsRequest;
 
 namespace SpotiStore.ViewModels
 {
-    public class PlaylistFinderViewModel: ViewModelBase
+    public class PlaylistFinderViewModel : ViewModelBase
     {
         /// <summary>
         /// the inputted ID for a spotify playlist query
         /// </summary>
-        private string _playlistId  = string.Empty;
+        private string _playlistId = string.Empty;
+        public string PlaylistId
+        {
+            get => _playlistId;
+            set => this.RaiseAndSetIfChanged(ref _playlistId, value);
+        }
+
 
         private string _playlistName;
+        public string PlaylistName
+        {
+            get => _playlistName;
+            set => this.RaiseAndSetIfChanged(ref _playlistName, value);
+        }
 
         private string _accountId = string.Empty;
-        
-        private string _accountName;
+        public string AccountId
+        {
+            get => _accountId;
+            set => this.RaiseAndSetIfChanged(ref _accountId, value);
+        }
 
-        private SpotifyClient _client;
+
+        private string _accountName;
+        public string AccountName
+        {
+            get => _accountName;
+            set => this.RaiseAndSetIfChanged(ref _accountName, value);
+        }
+
+        private API _client;
 
         public string? RetrievedPlaylistName;
         /// <summary>
         /// the reactive Command handling the playlist search button handling
         /// </summary>
-        public ReactiveCommand<Unit,System.Threading.Tasks.Task<string>> SearchCommand { get;}
+        public ReactiveCommand<Unit, System.Threading.Tasks.Task<string>> SearchCommand { get; }
         public ReactiveCommand<Unit, System.Threading.Tasks.Task<string>> SearchAccountCommand { get; }
 
         public ObservableCollection<string> PlaylistTracks { get; }
-        public ObservableCollection<Tuple<string,string>> AccountPlaylists { get; }
-        public ObservableCollection<Tuple<string, string>> SelectedPlaylists { get; } = new ObservableCollection<Tuple<string,string>>();
+        public ObservableCollection<Tuple<string, string>> AccountPlaylists { get; }
+        public ObservableCollection<Tuple<string, string>> SelectedPlaylists { get; } = new ObservableCollection<Tuple<string, string>>();
 
-        public PlaylistFinderViewModel(SpotifyClient client)
+        public PlaylistFinderViewModel(API client)
         {
+            _client = client;
             PlaylistTracks = new ObservableCollection<string>();
-            AccountPlaylists = new ObservableCollection<Tuple<string,string>>();
+            AccountPlaylists = new ObservableCollection<Tuple<string, string>>();
             var isValidPlaylistSearchQuery = this.WhenAnyValue(
                     q => q.PlaylistId,
                     q => !string.IsNullOrWhiteSpace(q));
+
             var isValidAccountSearchQuery = this.WhenAnyValue(
                     q => q.AccountId,
                     q => !string.IsNullOrEmpty(q));
@@ -60,7 +80,6 @@ namespace SpotiStore.ViewModels
                     () => QueryPlaylist(), isValidPlaylistSearchQuery);
             SearchAccountCommand = ReactiveCommand.Create(
                 () => QueryAccount(), isValidAccountSearchQuery);
-            _client = client;
         }
         /// <summary>
         /// queries for the playlist using the inputted PlaylistId, and fills out the preview information for the user.
@@ -73,7 +92,7 @@ namespace SpotiStore.ViewModels
             {
                 var previewTracks = new List<Song>();
                 //TODO: create null playlist handling.
-                playlist = await _client.Playlists.Get(PlaylistId);
+                playlist = await _client.QueryPlaylistAsync(PlaylistId);
                 foreach (var playlistItem in playlist.Tracks.Items)
                 {
                     previewTracks.Add(new Song(playlistItem));
@@ -95,61 +114,60 @@ namespace SpotiStore.ViewModels
 
         public async Task<string> QueryAccount()
         {
-            SpotifyAPI.Web.PublicUser user;
             //pull user name
-            try
-            {
-                var test = await _client.UserProfile.Get(AccountId);
-                AccountName = test.DisplayName;
-            }
-            catch (Exception e)
-            {
-
-                AccountName = "No User Account was found!";
-                return "No User Account was found!";
-            }
-            //pull the Id and Name of every playlist associated with the queried account
-            try
-            {
-                var playlistInformation = new List<Tuple<string, string>>();
-                var playlists = await _client.Playlists.GetUsers(AccountId);
-                await foreach (var playlist in _client.Paginate(playlists))
-                {
-                    playlistInformation.Add(new Tuple<string, string>(playlist.Id, playlist.Name));
-                }
-
-                UpdateAccountPlaylists(playlistInformation);
-                return null;
-
-            }
-            catch (Exception e)
-            {
-                return null;
-            }
+            AccountName = await _client.GetUserProfileNameAsync(AccountId);
+            //pull the Id and name of every playlist associated with the queried account
+            var playlistInfo = await _client.GetUserProfilePlaylistsAsync(AccountId);
+            UpdateAccountPlaylists(playlistInfo);
+            return null;
         }
+
+
+        /// <summary>
+        /// pulls the playlist data, creates a playlist model object, and converts the tracks to Song model objects
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> ArchivePlaylist()
+        {
+            Playlist playlist;
+            try
+            {
+                playlist = await _client.GetPlaylistAsync(PlaylistId);
+            }
+            catch (Exception e)
+            {
+                UpdatePlaylistPreviewTracks(null);
+                PlaylistName = $"Playlist Archive Error! {e.Message}";
+                return false;
+            }
+            var fileLocation = await FileIO.GetPath(playlist.PlaylistName);
+            if (fileLocation == "") return false;
+            using (var writer = new StreamWriter(fileLocation))
+            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+            {
+                csv.Context.RegisterClassMap<SongMap>();
+                csv.WriteRecords(playlist.PlaylistSongs.Select(p => (Song)p));
+            }
+            return true;
+        }
+
+
         public async Task<bool> ArchivePlaylists()
         {
-            foreach(var selectedPlaylist in SelectedPlaylists)
+            foreach (var selectedPlaylist in SelectedPlaylists)
             {
-                FullPlaylist fullPlaylist;
                 Playlist playlist;
                 try
                 {
-                    fullPlaylist = await _client.Playlists.Get(selectedPlaylist.Item1);
-                    playlist = new Playlist(fullPlaylist);
+                    playlist = await _client.GetPlaylistAsync(selectedPlaylist.Item1);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-
-                    AccountName = $"{selectedPlaylist.Item2} was not found!";
+                    UpdatePlaylistPreviewTracks(null);
+                    PlaylistName = $"Playlist Archive Error! {e.Message}";
                     return false;
                 }
-
-                await foreach (var item in _client.Paginate(fullPlaylist.Tracks))
-                {
-                    playlist.AddPlaylistTrack(item);
-                }
-                var fileLocation = await GetPath(fullPlaylist.Name);
+                var fileLocation = await FileIO.GetPath(playlist.PlaylistName);
                 if (fileLocation == "") return false;
                 using (var writer = new StreamWriter(fileLocation))
                 using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
@@ -161,73 +179,7 @@ namespace SpotiStore.ViewModels
             return true;
         }
 
-        /// <summary>
-        /// pulls the playlist data, creates a playlist model object, and converts the tracks to Song model objects
-        /// </summary>
-        /// <returns></returns>
-        public async Task<bool> ArchivePlaylist()
-        {
-            FullPlaylist fullPlaylist;
-            Playlist playlist;
-            try
-            {
-                fullPlaylist = await _client.Playlists.Get(PlaylistId);
-                 playlist = new Playlist(fullPlaylist);
-            }
-            catch (Exception e)
-            {
-
-                UpdatePlaylistPreviewTracks(null);
-
-                PlaylistName = "The targeted playlist was not found!";
-                //TODO: Add error handling here for when a user hasn't queried a playlist yet.
-
-                return false;
-            }
-
-            await foreach (var item in _client.Paginate(fullPlaylist.Tracks))
-            {
-                playlist.AddPlaylistTrack(item);
-            }
-            var fileLocation = await GetPath(fullPlaylist.Name);
-            if (fileLocation == "") return false;
-            using (var writer = new StreamWriter(fileLocation))
-            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
-            {
-                csv.Context.RegisterClassMap<SongMap>();
-                csv.WriteRecords(playlist.PlaylistSongs.Select(p => (Song)p));
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// prompts the user to choose a save location for the CSV backup
-        /// </summary>
-        /// <returns></returns>
-        public async Task<string> GetPath(string name)
-        {
-
-            if (Avalonia.Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                SaveFileDialog saveFileDialog = new SaveFileDialog
-                {
-                    Title = "Choose file name",
-                    
-                    // TODO: add the playlist name as a default name 
-                };
-                saveFileDialog.InitialFileName = Path.GetInvalidFileNameChars().Aggregate(name, (current, c) => current.Replace(c, '_'));
-                saveFileDialog.Filters.Add(new FileDialogFilter { Name = "spreadsheets", Extensions = { "csv" } });
-                var outPathStrings = await saveFileDialog.ShowAsync(desktop.MainWindow).ConfigureAwait(false);
-
-                //var fileresult = task.Result;
-                return String.Join(" ", outPathStrings);
-            }
-
-            return "";
-        }
-
-
-        public void UpdateAccountPlaylists(IEnumerable<Tuple<string,string>> playlists)
+        public void UpdateAccountPlaylists(IEnumerable<Tuple<string, string>> playlists)
         {
 
             AccountPlaylists.Clear();
@@ -243,9 +195,9 @@ namespace SpotiStore.ViewModels
 
         public void UpdatePlaylistPreviewTracks(IEnumerable<Song>? songs)
         {
-            
+
             PlaylistTracks.Clear();
-            if(songs != null)
+            if (songs != null)
             {
                 foreach (var song in songs)
                 {
@@ -253,28 +205,6 @@ namespace SpotiStore.ViewModels
                 }
             }
         }
-        public string AccountName
-        {
-            get => _accountName;
-            set => this.RaiseAndSetIfChanged(ref _accountName, value);
-        }
-
-        public string AccountId
-        {
-            get => _accountId;
-            set => this.RaiseAndSetIfChanged(ref _accountId, value);
-        }
-
-        public string PlaylistId {
-            get => _playlistId;
-            set => this.RaiseAndSetIfChanged(ref _playlistId, value);
-        }
-        public string PlaylistName
-        {
-            get => _playlistName;
-            set => this.RaiseAndSetIfChanged(ref _playlistName, value);
-        }
-
 
     }
 }

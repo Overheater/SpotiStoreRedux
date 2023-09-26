@@ -9,13 +9,16 @@ using System.IO;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using SpotiStore.Services;
 
 namespace SpotiStore.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
         public MainWindowViewModel() {
-            createSpotifyClient();
+            API APIClient;
+            APIClient = new API();
+            APIClient.CreateClient().GetAwaiter().GetResult();
             PlaylistFinder = new PlaylistFinderViewModel(APIClient);
         }
         public PlaylistFinderViewModel PlaylistFinder { get; }
