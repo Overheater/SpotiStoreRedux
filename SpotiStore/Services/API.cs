@@ -32,7 +32,6 @@ namespace SpotiStore.Services
             catch (Exception ex)
             {
                 throw new Exception("Spotify Api Client could not be instatiated", ex);
-                return null;
             }
 
         }

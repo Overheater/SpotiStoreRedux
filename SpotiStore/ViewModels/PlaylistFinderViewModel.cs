@@ -57,6 +57,9 @@ namespace SpotiStore.ViewModels
         /// the reactive Command handling the playlist search button handling
         /// </summary>
         public ReactiveCommand<Unit, System.Threading.Tasks.Task<string>> SearchCommand { get; }
+        /// <summary>
+        /// the reactive Command handling the account search button handling
+        /// </summary>
         public ReactiveCommand<Unit, System.Threading.Tasks.Task<string>> SearchAccountCommand { get; }
 
         public ObservableCollection<string> PlaylistTracks { get; }
@@ -74,7 +77,7 @@ namespace SpotiStore.ViewModels
 
             var isValidAccountSearchQuery = this.WhenAnyValue(
                     q => q.AccountId,
-                    q => !string.IsNullOrEmpty(q));
+                    q => !string.IsNullOrWhiteSpace(q));
 
             SearchCommand = ReactiveCommand.Create(
                     () => QueryPlaylist(), isValidPlaylistSearchQuery);
@@ -119,7 +122,7 @@ namespace SpotiStore.ViewModels
             //pull the Id and name of every playlist associated with the queried account
             var playlistInfo = await _client.GetUserProfilePlaylistsAsync(AccountId);
             UpdateAccountPlaylists(playlistInfo);
-            return null;
+            return "";
         }
 
 
