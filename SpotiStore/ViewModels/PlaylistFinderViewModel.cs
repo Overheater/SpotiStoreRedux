@@ -103,7 +103,6 @@ namespace SpotiStore.ViewModels
                 UpdatePlaylistPreviewTracks(previewTracks);
                 PlaylistName = playlist.Name;
                 return playlist.Name;
-
             }
             catch (Exception e)
             {
