@@ -41,7 +41,7 @@ If you are using the desktop app, you can get the url of the playlist via the sh
 
 ![share option](https://github.com/Overheater/MDPictures/blob/main/Spotistore/PlaylistID2.png)  
 
-##Obtaining Spotify Account IDs
+## Obtaining Spotify Account IDs
 
 Obtaining Account IDs is very similar to obtaining a playlist ID:
 simply navigate to the target account, and copy the ID found at the end of the URL.
